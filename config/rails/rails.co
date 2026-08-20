@@ -1,0 +1,87 @@
+# Colang Policies for Deterministic Guardrails
+# These policies enforce iteration bounds and execution safety
+# Compatible with nemoguardrails 0.23.0 (Colang v1.0)
+
+define flow check_max_iterations
+  $iteration_count = get_iteration_count()
+  if $iteration_count > 100
+    execute halt_execution("Maximum iteration ceiling exceeded")
+
+define flow validate_input_schema
+  $input = get_user_input()
+  if not $input
+    execute halt_execution("Empty input received")
+  if not has_required_fields($input, ["execution_id", "payload"])
+    execute halt_execution("Input missing required fields")
+
+define flow validate_output_schema
+  $output = get_bot_response()
+  if not $output
+    execute halt_execution("Empty output from node")
+  if not is_valid_json($output)
+    execute halt_execution("Output is not valid JSON")
+
+define flow check_token_limits
+  $token_count = count_tokens(get_bot_response())
+  if $token_count > 8192
+    execute halt_execution("Token limit exceeded")
+
+define flow enforce_safety_policies
+  $response = get_bot_response()
+  if "rm -rf" in $response
+    execute halt_execution("Forbidden pattern detected")
+  if "sudo " in $response
+    execute halt_execution("Forbidden pattern detected")
+  if "chmod 777" in $response
+    execute halt_execution("Forbidden pattern detected")
+  if "__import__" in $response
+    execute halt_execution("Forbidden pattern detected")
+  if "eval(" in $response
+    execute halt_execution("Forbidden pattern detected")
+  if "exec(" in $response
+    execute halt_execution("Forbidden pattern detected")
+
+define flow enforce_iteration_ceiling
+  $current_iter = get_current_iteration()
+  $max_iter = get_max_iterations()
+  if $current_iter >= $max_iter
+    execute halt_execution("Iteration ceiling reached")
+
+define flow validate_node_transition
+  $from_node = get_previous_node()
+  $to_node = get_next_node()
+  $valid_transitions = get_valid_transitions()
+  if not is_valid_transition($from_node, $to_node, $valid_transitions)
+    execute halt_execution("Invalid node transition")
+
+define flow check_resource_limits
+  $exec_time = get_execution_time_seconds()
+  $memory_mb = get_memory_usage_mb()
+  if $exec_time > 300
+    execute halt_execution("Execution time limit exceeded")
+  if $memory_mb > 2048
+    execute halt_execution("Memory limit exceeded")
+
+# Helper flows
+define flow halt_execution($reason)
+  bot execute_halt(reason=$reason)
+
+define flow execute_halt(reason: str)
+  $decision = ValidationDecision(valid=False, errors=[reason], warnings=[], suggested_action="HALT")
+  bot send_message($decision)
+
+# Utility functions (implemented in Python guardrails layer)
+define user get_iteration_count()
+define user get_user_input()
+define user has_required_fields()
+define user is_valid_json()
+define user count_tokens()
+define user get_bot_response()
+define user get_current_iteration()
+define user get_max_iterations()
+define user get_previous_node()
+define user get_next_node()
+define user get_valid_transitions()
+define user is_valid_transition()
+define user get_execution_time_seconds()
+define user get_memory_usage_mb()

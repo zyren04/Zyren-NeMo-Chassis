@@ -1,0 +1,70 @@
+# NeMo Guardrails Configuration for Deterministic Execution Safety
+# This configuration establishes iteration bounds and execution safety policies
+# Extended with Nemotron Content Safety Policy support
+
+models:
+  - type: main
+    engine: openai
+    model: gpt-4
+
+rails:
+  input:
+    flows:
+      - check_max_iterations
+      - validate_input_schema
+      - sanitize_input
+      - nemotron_content_safety_input    # NEW: Nemotron input classification
+
+  output:
+    flows:
+      - validate_output_schema
+      - check_token_limits
+      - enforce_safety_policies
+      - nemotron_content_safety_output   # NEW: Nemotron output classification
+
+  retrieval:
+    flows: []
+
+  execution:
+    flows:
+      - enforce_iteration_ceiling
+      - validate_node_transition
+      - check_resource_limits
+
+# Deterministic iteration bounds
+max_iterations: 100
+max_tokens_per_call: 8192
+max_total_tokens: 100000
+
+# Safety policies
+forbidden_patterns:
+  - "rm -rf"
+  - "sudo "
+  - "chmod 777"
+  - "__import__"
+  - "eval("
+  - "exec("
+
+required_validators:
+  - schema_validator
+  - iteration_validator
+  - resource_validator
+  - nemotron_policy_validator        # NEW
+
+# Resource limits
+resource_limits:
+  max_execution_time_seconds: 300
+  max_memory_mb: 2048
+  max_concurrent_nodes: 3
+
+# NEW: Nemotron Content Safety Configuration
+content_safety:
+  enabled: true
+  policy_path: "config/policies/enterprise_rag.json"  # Default policy
+  target_model: "ncs-reasoning-4b"                    # or "ncs-vl", "nemo-guardrails"
+  mode: "no_think"                                    # or "think"
+  categories_mode: "no_categories"                    # or "categories" (Nemotron-3 only)
+  severity_threshold: "S2"                            # Minimum severity to block (S0-S4)
+  allow_list_enabled: true
+  multimodal: false                                   # Set true for Nemotron-3 image input
+  locales: ["en-US"]                                  # For Nemotron-3 multilingual

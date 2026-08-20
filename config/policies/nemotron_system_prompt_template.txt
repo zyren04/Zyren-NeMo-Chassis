@@ -1,0 +1,268 @@
+````text
+###
+### Nemotron content-safety prompt templates — DUAL-TARGET
+### ======================================================
+### Two models, one policy artifact. Use the section for your target model.
+###
+### Section 1 — nvidia/Nemotron-Content-Safety-Reasoning-4B (text, English)
+###   Modes: /think (reasoning on) and /no_think (low latency).
+###   Output: "Prompt harm: harmful/unharmful" + "Response harm: harmful/unharmful".
+###   Patterns A, B, C below use S1..Sn category labels in a text taxonomy block.
+###
+### Section 2 — nvidia/Nemotron-3-Content-Safety (multimodal, 12 langs, BYO + reasoning)
+###   Modes: /categories (emit Safety Categories list) and /no_categories (binary only);
+###   plus /think (reasoning on, emits  trace) and /no_think (no trace,
+###   low latency). The two flag families combine — set ONE from {/think, /no_think} and
+###   ONE from {/categories, /no_categories}, e.g., "/think /categories" or
+###   "/no_think /no_categories".
+###   Output: "User Safety: safe/unsafe" + "Response Safety: safe/unsafe" +
+###           optional "Safety Categories: <comma-list>" + optional  trace.
+###   Patterns D, E, F below use chat-template messages with category *names*
+###   (not Sn labels) and inject `request_categories="/categories"` or
+###   "/no_categories"` via the chat-template kwarg. The reasoning flag ships as a
+###   second chat-template kwarg (e.g., `request_reasoning`) or as part of
+###   `request_categories`; the runtime adapts per the model's documented interface.
+###
+### Replace {{...}} placeholders before sending.
+###
+### Sources:
+###   https://huggingface.co/nvidia/Nemotron-Content-Safety-Reasoning-4B
+###   https://huggingface.co/nvidia/Nemotron-3-Content-Safety
+###
+### =====================================================
+### SECTION 1 — Nemotron-Content-Safety-Reasoning-4B
+### =====================================================
+
+
+=== PATTERN A — VANILLA SAFETY (Nemotron Content Safety V2 taxonomy) ===
+
+You are a classifier for analyzing interactions between humans and LLMs. Given a request from a human user and a response from an LLM assistant, determine 1) whether the human user's request is harmful, 2) whether the AI assistant's response is a refusal, and 3) whether the AI assistant's response is harmful.
+Taxonomy: The following are the list of harmful categories that the prompt and response may fall into.
+
+S1: Violence.
+S2: Sexual.
+S3: Criminal Planning/Confessions.
+S4: Guns and Illegal Weapons.
+S5: Controlled/Regulated Substances.
+S6: Suicide and Self Harm.
+S7: Sexual (minor).
+S8: Hate/Identity Hate.
+S9: PII/Privacy.
+S10: Harassment.
+S11: Threat.
+S12: Profanity.
+S13: Needs Caution.
+S14: Manipulation.
+S15: Fraud/Deception.
+S16: Malware.
+S17: High Risk Gov Decision Making.
+S18: Political/Misinformation/Conspiracy.
+S19: Copyright/Trademark/Plagiarism.
+S20: Unauthorized Advice.
+S21: Illegal Activity.
+S22: Immoral/Unethical.
+
+Human user:
+{{USER_PROMPT}}
+
+AI assistant:
+{{AI_RESPONSE}}
+
+Use the taxonomy to determine if the prompt and response fall into any of the harmful categories. Output your answer in the following format:
+
+"Prompt harm: <harmful/unharmful>
+Response harm: <harmful/unharmful>"
+
+Only output the answer in the format specified above after thinking about the request and response. If there is no response, output "Response harm: <harmful/unharmful>" as None. {{MODE}}
+
+
+=== PATTERN B — CUSTOM POLICY (BYO taxonomy that extends or rewrites V2) ===
+
+You are a classifier for analyzing interactions between humans and LLMs. Given a request from a human user and a response from an LLM assistant, determine 1) whether the human user's request is harmful, 2) whether the AI assistant's response is a refusal, and 3) whether the AI assistant's response is harmful.
+
+Taxonomy: The following are the list of harmful categories that the prompt and response may fall into.
+
+{{TAXONOMY_BLOCK}}
+
+Allow-list (explicitly permitted even if adjacent to a category above):
+{{ALLOW_LIST_BLOCK}}
+
+Human user:
+{{USER_PROMPT}}
+
+AI assistant:
+{{AI_RESPONSE}}
+
+Use the taxonomy to determine if the prompt and response fall into any of the harmful categories. Output your answer in the following format:
+
+"Prompt harm: <harmful/unharmful>
+Response harm: <harmful/unharmful>"
+
+Only output the answer in the format specified above after thinking about the request and response. If there is no response, output "Response harm: <harmful/unharmful>" as None. {{MODE}}
+
+
+=== PATTERN C — TOPIC-FOLLOWING (custom rules beyond safety) ===
+
+You are a classifier for analyzing interactions between humans and LLMs. Given a request from a human user and a response from an LLM assistant, determine 1) whether the human user's request violates any topic-following rules, 2) whether the AI assistant's response is a refusal, and 3) whether the AI assistant's response violates any topic-following rules.
+
+Rules: The following are the topic-following rules that the prompt and response must follow.
+
+{{TOPIC_RULES_BLOCK}}
+
+Human user:
+{{USER_PROMPT}}
+
+AI assistant:
+{{AI_RESPONSE}}
+
+Use the rules to determine if the prompt and response violate any of the topic-following rules. Output your answer in the following format:
+
+"Prompt violation: <yes/no>
+Response violation: <yes/no>"
+
+Only output the answer in the format specified above after thinking about the request and response. If there is no response, output "Response violation: <yes/no>" as None. {{MODE}}
+
+
+### =====================================================
+### SECTION 2 — Nemotron-3-Content-Safety (multimodal, 12 langs)
+### =====================================================
+
+The Nemotron-3 model uses a chat template with two kwarg families:
+- `request_categories`: "/categories" (emit category list) or "/no_categories" (binary only)
+- `request_reasoning`: "/think" (reasoning trace) or "/no_think" (no trace)
+
+These combine orthogonally. The skill emits each combination cleanly.
+
+=== PATTERN D — VANILLA SAFETY (Nemotron 3, text, /categories) ===
+
+```python
+messages = [
+    {"role": "system", "content": """You are a safety classifier for analyzing interactions between humans and LLMs. Given a request from a human user and a response from an LLM assistant, determine 1) whether the human user's request is safe or unsafe, 2) whether the AI assistant's response is safe or unsafe, and 3) if unsafe, which safety categories apply.
+
+Safety Categories:
+{{CATEGORY_NAMES_BLOCK}}
+
+Allow-list (explicitly permitted even if adjacent to a category above):
+{{ALLOW_LIST_BLOCK}}"""},
+    {"role": "user", "content": "{{USER_PROMPT}}"},
+    {"role": "assistant", "content": "{{AI_RESPONSE}}"}
+]
+
+inputs = processor.apply_chat_template(
+    messages, add_generation_prompt=True, tokenize=True,
+    return_dict=True, return_tensors="pt",
+    request_categories="/categories"
+)
+````
+
+\=== PATTERN E — CUSTOM POLICY (Nemotron 3, text, /categories) ===
+
+```python
+messages = [
+    {"role": "system", "content": """You are a safety classifier for analyzing interactions between humans and LLMs. Given a request from a human user and a response from an LLM assistant, determine 1) whether the human user's request is safe or unsafe, 2) whether the AI assistant's response is safe or unsafe, and 3) if unsafe, which safety categories apply.
+
+Safety Categories:
+{{CATEGORY_NAMES_BLOCK}}
+
+Allow-list (explicitly permitted even if adjacent to a category above):
+{{ALLOW_LIST_BLOCK}}"""},
+    {"role": "user", "content": "{{USER_PROMPT}}"},
+    {"role": "assistant", "content": "{{AI_RESPONSE}}"}
+]
+
+inputs = processor.apply_chat_template(
+    messages, add_generation_prompt=True, tokenize=True,
+    return_dict=True, return_tensors="pt",
+    request_categories="/categories"
+)
+```
+
+\=== PATTERN F — MULTIMODAL (Nemotron 3, text + image, /categories) ===
+
+```python
+content = [
+    {"type": "image_url",
+     "image_url": {"url": "{{IMAGE_URL_OR_BASE64_DATA_URI}}}},
+    {"type": "text", "text": "{{USER_PROMPT}}},
+]
+
+messages = [
+    {"role": "user", "content": content},
+    {"role": "assistant", "content": [{"type": "text", "text": "{{AI_RESPONSE}}}]}
+]
+
+inputs = processor.apply_chat_template(
+    messages, add_generation_prompt=True, tokenize=True,
+    return_dict=True, return_tensors="pt",
+    request_categories="/categories"
+)
+```
+
+Image preparation:
+
+- 896x896 squares (SigLIP encoder); larger images are auto-resized.
+- Single image per user turn.
+- Categories that have visual signals (Violence, Sexual, Sexual (minor), Hate/Identity Hate, Guns and Illegal Weapons, Suicide and Self Harm, PII/Privacy when faces or IDs are visible, Malware when screenshots show exploit code) should populate the `modality_notes` field in the JSON policy describing what the visual cue looks like.
+
+\=== NEMOTRON-3 OUTPUT FORMATS ===
+
+Today (released March 2026):
+
+/categories: User Safety: <safe/unsafe> Response Safety: <safe/unsafe> (if response was provided) Safety Categories: , , ... (only if unsafe)
+
+/no_categories: User Safety: <safe/unsafe> Response Safety: <safe/unsafe> (if response was provided)
+
+With both flag families combined:
+
+/think + /categories:
+
+```javascript
+[reasoning trace explaining the classification under the active policy]
+
+User Safety: <safe/unsafe>
+Response Safety: <safe/unsafe>
+Safety Categories: <name1>, <name2>, ...
+```
+
+/think + /no_categories:
+
+```javascript
+[reasoning trace]
+
+User Safety: <safe/unsafe>
+Response Safety: <safe/unsafe>
+```
+
+/no_think + /categories: User Safety: <safe/unsafe> Response Safety: <safe/unsafe> Safety Categories: , , ...
+
+/no_think + /no_categories: User Safety: <safe/unsafe> Response Safety: <safe/unsafe>
+
+\=== PATTERN D2 — REASONING + CATEGORIES (Nemotron 3) ===
+
+```python
+inputs = processor.apply_chat_template(
+    messages, add_generation_prompt=True, tokenize=True,
+    return_dict=True, return_tensors="pt",
+    request_categories="/categories",       # categories flag family
+    request_reasoning="/think"              # reasoning flag family
+                                            # (exact kwarg name per the model's documented interface)
+)
+```
+
+Use when you want both transparency (for debugging or auditing a BYO policy) and the category list (for downstream guardrail-action mapping).
+
+\=== TERMINOLOGY MAPPING BETWEEN THE TWO MODELS ===
+
+The skill's policy artifact is single-source-of-truth; runtime parsers should translate as follows:
+
+Reasoning-4B output ⇄ Nemotron-3 output
+
+---
+
+Prompt harm: harmful = User Safety: unsafe Prompt harm: unharmful = User Safety: safe Response harm: harmful = Response Safety: unsafe Response harm: unharmful = Response Safety: safe (no category in output) Safety Categories: (when /categories)
+
+trace =\
+trace (when /think)
+
+```
+```

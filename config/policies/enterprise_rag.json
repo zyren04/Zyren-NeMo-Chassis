@@ -1,0 +1,606 @@
+{
+  "policy_name": "enterprise_rag",
+  "version": "0.1.0",
+  "date": "2026-08-18",
+  "owner": "nemotron-policy-generator",
+  "target_models": [
+    "ncs-reasoning"
+  ],
+  "use_cases": [
+    "runtime_guardrails"
+  ],
+  "taxonomy_mode": "v2_plus_custom",
+  "severity_model": "graded_s0_s4",
+  "assumptions": [
+    "Starting archetype: Enterprise RAG over Internal Docs",
+    "Taxonomy mode: v2_plus_custom (100% rough words mapped)",
+    "Deployment: enterprise RAG, EN-US, US jurisdiction",
+    "Severity model: graded S0-S4 (chosen because runtime guardrails require it)",
+    "Modality: text-only (NCS, not NCS-VL)"
+  ],
+  "allow_list": [
+    "Internal documentation references",
+    "Code snippets from proprietary repositories",
+    "Architecture diagrams and technical specifications"
+  ],
+  "response_guidance": {
+    "S0": "Proceed normally",
+    "S1": "Proceed with caveat",
+    "S2": "Refuse + brief explanation",
+    "S3": "Refuse + redirect to resources where applicable",
+    "S4": "Refuse + log for human review"
+  },
+  "jurisdiction_notes": "Default: en-US",
+  "calibration_notes": "Default calibration; adjust based on deployment requirements.",
+  "cot_rules": "Standard CoT rules apply for reasoning models.",
+  "categories": [
+    {
+      "name": "violence",
+      "display_name": "Violence",
+      "definition": "Content that depicts, threatens, glorifies, or instructs physical violence against people or animals.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S1",
+      "in_scope": [
+        "Content that depicts, threatens, glorifies, or instructs physical violence against people or animals."
+      ],
+      "out_of_scope": [
+        "legal hunting/sport/collector content",
+        "fictional violence in entertainment context"
+      ],
+      "examples_safe": [
+        "Safe example for Violence"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Violence"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "sexual",
+      "display_name": "Sexual",
+      "definition": "Sexually explicit content involving adults.",
+      "severity": "S2",
+      "custom": false,
+      "aegis_parent": "S2",
+      "in_scope": [
+        "Sexually explicit content involving adults."
+      ],
+      "out_of_scope": [
+        "educational sexual health content",
+        "medical anatomy"
+      ],
+      "examples_safe": [
+        "Safe example for Sexual"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Sexual"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "criminal_planning",
+      "display_name": "Criminal Planning/Confessions",
+      "definition": "Step-by-step operational guidance for committing crimes or confessions of past crimes.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S3",
+      "in_scope": [
+        "Step-by-step operational guidance for committing crimes or confessions of past crimes."
+      ],
+      "out_of_scope": [
+        "information about crime (journalism, academic)"
+      ],
+      "examples_safe": [
+        "Safe example for Criminal Planning/Confessions"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Criminal Planning/Confessions"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "weapons",
+      "display_name": "Guns and Illegal Weapons",
+      "definition": "Instructions for acquiring, modifying, or using weapons in ways that bypass legal controls, including untraceable firearms and conversions.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S4",
+      "in_scope": [
+        "Instructions for acquiring, modifying, or using weapons in ways that bypass legal controls, including untraceable firearms and conversions."
+      ],
+      "out_of_scope": [
+        "legal hunting/sport/collector content"
+      ],
+      "examples_safe": [
+        "Safe example for Guns and Illegal Weapons"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Guns and Illegal Weapons"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "controlled_substances",
+      "display_name": "Controlled/Regulated Substances",
+      "definition": "Synthesis, dosage circumvention, illicit-market sourcing, or trafficking guidance for controlled substances.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S5",
+      "in_scope": [
+        "Synthesis, dosage circumvention, illicit-market sourcing, or trafficking guidance for controlled substances."
+      ],
+      "out_of_scope": [
+        "harm reduction content",
+        "medical use with prescription"
+      ],
+      "examples_safe": [
+        "Safe example for Controlled/Regulated Substances"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Controlled/Regulated Substances"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "self_harm",
+      "display_name": "Suicide and Self Harm",
+      "definition": "Encouragement, instructions, or glorification of self-harm or suicide.",
+      "severity": "S4",
+      "custom": false,
+      "aegis_parent": "S6",
+      "in_scope": [
+        "Encouragement, instructions, or glorification of self-harm or suicide."
+      ],
+      "out_of_scope": [
+        "mental health awareness content",
+        "crisis resource sharing"
+      ],
+      "examples_safe": [
+        "Safe example for Suicide and Self Harm"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Suicide and Self Harm"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "sexual_minor",
+      "display_name": "Sexual (Minor)",
+      "definition": "Content that sexualizes minors.",
+      "severity": "S4",
+      "custom": false,
+      "aegis_parent": "S7",
+      "in_scope": [
+        "Content that sexualizes minors."
+      ],
+      "out_of_scope": [
+        "None specified"
+      ],
+      "examples_safe": [
+        "Safe example for Sexual (Minor)"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Sexual (Minor)"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "hate_identity",
+      "display_name": "Hate/Identity Hate",
+      "definition": "Content that attacks, demeans, or promotes hatred against protected groups.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S8",
+      "in_scope": [
+        "Content that attacks, demeans, or promotes hatred against protected groups."
+      ],
+      "out_of_scope": [
+        "academic discussion of hate groups",
+        "counter-speech"
+      ],
+      "examples_safe": [
+        "Safe example for Hate/Identity Hate"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Hate/Identity Hate"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "pii_privacy",
+      "display_name": "PII/Privacy",
+      "definition": "Disclosure or solicitation of personally identifiable information.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S9",
+      "in_scope": [
+        "Disclosure or solicitation of personally identifiable information."
+      ],
+      "out_of_scope": [
+        "publicly available information",
+        "fictional examples"
+      ],
+      "examples_safe": [
+        "Safe example for PII/Privacy"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for PII/Privacy"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "harassment",
+      "display_name": "Harassment",
+      "definition": "Persistent or severe targeted abuse against an individual.",
+      "severity": "S2",
+      "custom": false,
+      "aegis_parent": "S10",
+      "in_scope": [
+        "Persistent or severe targeted abuse against an individual."
+      ],
+      "out_of_scope": [
+        "constructive criticism",
+        "disagreement"
+      ],
+      "examples_safe": [
+        "Safe example for Harassment"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Harassment"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "threat",
+      "display_name": "Threat",
+      "definition": "Credible threats of physical harm or violence against individuals or groups.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S11",
+      "in_scope": [
+        "Credible threats of physical harm or violence against individuals or groups."
+      ],
+      "out_of_scope": [
+        "hyperbolic language",
+        "fictional threats in storytelling"
+      ],
+      "examples_safe": [
+        "Safe example for Threat"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Threat"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "profanity",
+      "display_name": "Profanity",
+      "definition": "Offensive or vulgar language.",
+      "severity": "S1",
+      "custom": false,
+      "aegis_parent": "S12",
+      "in_scope": [
+        "Offensive or vulgar language."
+      ],
+      "out_of_scope": [
+        "mild colloquialisms",
+        "quoted material"
+      ],
+      "examples_safe": [
+        "Safe example for Profanity"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Profanity"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "needs_caution",
+      "display_name": "Needs Caution",
+      "definition": "Content that may be harmful in certain contexts but is not clearly violating.",
+      "severity": "S2",
+      "custom": false,
+      "aegis_parent": "S13",
+      "in_scope": [
+        "Content that may be harmful in certain contexts but is not clearly violating."
+      ],
+      "out_of_scope": [
+        "clearly safe content",
+        "clearly harmful content"
+      ],
+      "examples_safe": [
+        "Safe example for Needs Caution"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Needs Caution"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "manipulation",
+      "display_name": "Manipulation",
+      "definition": "Content designed to manipulate, deceive, or coerce the user.",
+      "severity": "S2",
+      "custom": false,
+      "aegis_parent": "S14",
+      "in_scope": [
+        "Content designed to manipulate, deceive, or coerce the user."
+      ],
+      "out_of_scope": [
+        "persuasive writing",
+        "marketing content"
+      ],
+      "examples_safe": [
+        "Safe example for Manipulation"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Manipulation"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "fraud_deception",
+      "display_name": "Fraud/Deception",
+      "definition": "Content that facilitates fraud, scams, or deceptive practices.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S15",
+      "in_scope": [
+        "Content that facilitates fraud, scams, or deceptive practices."
+      ],
+      "out_of_scope": [
+        "educational content about fraud prevention"
+      ],
+      "examples_safe": [
+        "Safe example for Fraud/Deception"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Fraud/Deception"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "malware",
+      "display_name": "Malware",
+      "definition": "Code or instructions for creating or distributing malicious software.",
+      "severity": "S4",
+      "custom": false,
+      "aegis_parent": "S16",
+      "in_scope": [
+        "Code or instructions for creating or distributing malicious software."
+      ],
+      "out_of_scope": [
+        "security research with responsible disclosure",
+        "antivirus signatures"
+      ],
+      "examples_safe": [
+        "Safe example for Malware"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Malware"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "high_risk_gov",
+      "display_name": "High Risk Gov Decision Making",
+      "definition": "Use of AI for high-stakes government decisions with public-safety, fairness, or geopolitical consequences.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S17",
+      "in_scope": [
+        "Use of AI for high-stakes government decisions with public-safety, fairness, or geopolitical consequences."
+      ],
+      "out_of_scope": [
+        "background factual information",
+        "policy analysis"
+      ],
+      "examples_safe": [
+        "Safe example for High Risk Gov Decision Making"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for High Risk Gov Decision Making"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "political_misinfo",
+      "display_name": "Political/Misinformation/Conspiracy",
+      "definition": "Generating political propaganda, election misinformation, conspiracy-theory content, or false claims about public figures or events.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S18",
+      "in_scope": [
+        "Generating political propaganda, election misinformation, conspiracy-theory content, or false claims about public figures or events."
+      ],
+      "out_of_scope": [
+        "neutral political-process explanation",
+        "balanced policy analysis"
+      ],
+      "examples_safe": [
+        "Safe example for Political/Misinformation/Conspiracy"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Political/Misinformation/Conspiracy"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "ip_violation",
+      "display_name": "Copyright/Trademark/Plagiarism",
+      "definition": "Reproducing copyrighted text/code/images, generating trademark-infringing content, or supporting plagiarism workflows.",
+      "severity": "S2",
+      "custom": false,
+      "aegis_parent": "S19",
+      "in_scope": [
+        "Reproducing copyrighted text/code/images, generating trademark-infringing content, or supporting plagiarism workflows."
+      ],
+      "out_of_scope": [
+        "fair use",
+        "public-domain content",
+        "properly cited summaries"
+      ],
+      "examples_safe": [
+        "Safe example for Copyright/Trademark/Plagiarism"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Copyright/Trademark/Plagiarism"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "unauthorized_advice",
+      "display_name": "Unauthorized Advice",
+      "definition": "Model-generated specific medical, legal, or financial advice for an individual's situation without authoritative-source citation.",
+      "severity": "S2",
+      "custom": false,
+      "aegis_parent": "S20",
+      "in_scope": [
+        "Model-generated specific medical, legal, or financial advice for an individual's situation without authoritative-source citation."
+      ],
+      "out_of_scope": [
+        "general educational content with citations"
+      ],
+      "examples_safe": [
+        "Safe example for Unauthorized Advice"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Unauthorized Advice"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "illegal_activity",
+      "display_name": "Illegal Activity",
+      "definition": "General-purpose guidance for committing illegal activities not specifically covered by other categories.",
+      "severity": "S3",
+      "custom": false,
+      "aegis_parent": "S21",
+      "in_scope": [
+        "General-purpose guidance for committing illegal activities not specifically covered by other categories."
+      ],
+      "out_of_scope": [
+        "legal information",
+        "civic education"
+      ],
+      "examples_safe": [
+        "Safe example for Illegal Activity"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Illegal Activity"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "immoral_unethical",
+      "display_name": "Immoral/Unethical",
+      "definition": "Content that is broadly considered immoral or unethical even if not strictly illegal.",
+      "severity": "S2",
+      "custom": false,
+      "aegis_parent": "S22",
+      "in_scope": [
+        "Content that is broadly considered immoral or unethical even if not strictly illegal."
+      ],
+      "out_of_scope": [
+        "ethical dilemmas discussion",
+        "philosophical debate"
+      ],
+      "examples_safe": [
+        "Safe example for Immoral/Unethical"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Immoral/Unethical"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "trade_secret",
+      "display_name": "Trade Secrets",
+      "definition": "Disclosure of proprietary algorithms, formulas, or processes",
+      "severity": "S3",
+      "custom": true,
+      "aegis_parent": "",
+      "in_scope": [
+        "Disclosure of proprietary algorithms, formulas, or processes"
+      ],
+      "out_of_scope": [
+        "None specified"
+      ],
+      "examples_safe": [
+        "Safe example for Trade Secrets"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Trade Secrets"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "competitive_intel",
+      "display_name": "Competitive Intelligence",
+      "definition": "Leakage of competitor-sensitive information",
+      "severity": "S3",
+      "custom": true,
+      "aegis_parent": "",
+      "in_scope": [
+        "Leakage of competitor-sensitive information"
+      ],
+      "out_of_scope": [
+        "None specified"
+      ],
+      "examples_safe": [
+        "Safe example for Competitive Intelligence"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Competitive Intelligence"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    },
+    {
+      "name": "unreleased_product_info",
+      "display_name": "Unreleased Product Information",
+      "definition": "Disclosure of unannounced products or features",
+      "severity": "S3",
+      "custom": true,
+      "aegis_parent": "",
+      "in_scope": [
+        "Disclosure of unannounced products or features"
+      ],
+      "out_of_scope": [
+        "None specified"
+      ],
+      "examples_safe": [
+        "Safe example for Unreleased Product Information"
+      ],
+      "examples_unsafe": [
+        "Unsafe example for Unreleased Product Information"
+      ],
+      "edge_cases": [],
+      "modality_notes": ""
+    }
+  ]
+}

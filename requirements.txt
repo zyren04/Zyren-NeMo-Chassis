@@ -1,0 +1,38 @@
+# Core Runtime Dependencies
+langchain-nvidia-ai-endpoints>=0.3.0
+langgraph>=0.2.0
+nemoguardrails>=0.23.0
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+aiosqlite>=0.19.0
+tenacity>=8.2.0
+python-dotenv>=1.0.0
+
+# Rate Limiting & Async Utilities
+aiolimiter>=1.2.0
+
+# Vector Store
+faiss-cpu>=1.9.0
+langchain-community>=0.3.0
+
+# NeMo Relay Integration (optional - internal NVIDIA package, not on PyPI)
+# nemo-relay[langchain,langgraph]>=0.1.0
+
+# Policy Validation
+jsonschema>=4.20.0
+
+# Configuration
+PyYAML>=6.0
+
+# Testing Dependencies
+pytest>=8.2.0
+pytest-asyncio>=0.23.0
+pytest-mock>=3.14.0
+
+# Development Tools
+ruff>=0.5.0
+mypy>=1.10.0
+bandit>=1.7.0
+
+# Optional: JupyterLab for notebook development
+jupyterlab>3.0

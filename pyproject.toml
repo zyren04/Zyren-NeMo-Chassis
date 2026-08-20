@@ -1,0 +1,75 @@
+[project]
+name = "ai-infrastructure-chassis"
+version = "0.1.0"
+description = "Modular, domain-agnostic infrastructure chassis for multi-node state machine systems with NVIDIA 2026 AI ecosystem integration"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain-nvidia-ai-endpoints>=0.3.0",
+    "langgraph>=0.2.0",
+    "nemoguardrails>=0.23.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.3.0",
+    "aiosqlite>=0.19.0",
+    "tenacity>=8.2.0",
+    "python-dotenv>=1.0.0",
+    "pytest>=8.2.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+    "bandit>=1.7.0",
+    "aiolimiter>=1.2.0",
+    "faiss-cpu>=1.9.0",
+    "langchain-community>=0.3.0",
+    #    "nemo-relay[langchain,langgraph]>=0.1.0",
+    "jsonschema>=4.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest-cov>=5.0.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+]
+observability = [
+    "nemo-relay[observability]>=0.7.0",
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-exporter-otlp>=1.20.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers --strict-config"
+markers = [
+    "asyncio: mark test as async",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "T20"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+strict = true
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "venv"]

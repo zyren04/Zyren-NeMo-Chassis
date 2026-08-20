@@ -1,0 +1,46 @@
+# Observability Configuration for NeMo Relay Plugin
+# Matches NeMo Relay 0.7 plugin configuration schema (version = 3)
+
+version = 3
+
+[[components]]
+kind = "observability"
+enabled = true
+
+[components.config]
+version = 3
+
+# ATOF (Raw Canonical Events) - Default local proof
+[components.config.atof]
+enabled = true
+output_directory = "logs/observability"
+filename = "events.jsonl"
+mode = "append"  # "append" | "overwrite"
+
+# Optional stream sink for remote delivery
+# stream_url = "http://localhost:8080/events"
+# stream_transport = "http_post"
+# stream_header_env = { authorization = "NEMO_RELAY_ATOF_AUTH_HEADER" }
+
+# ATIF (Execution Trajectories) - For evaluation/analysis
+[components.config.atim]
+enabled = false
+output_directory = "logs/trajectories"
+agent_name = "nemo-relay-chassis"
+agent_metadata = { team = "infrastructure", environment = "local" }
+filename_template = "trajectory_{session_id}.json"
+
+# OpenTelemetry (OTLP Traces) - For production observability backends
+[components.config.opentelemetry]
+enabled = false
+endpoint = "http://localhost:4318/v1/traces"
+service_name = "nemo-relay-chassis"
+projection = "full"  # "full" | "gen_ai" | "openinference"
+transport = "http_binary"  # "http_binary" | "grpc"
+headers = {}
+resource_attributes = {}
+timeout_seconds = 10
+
+# Sanitization (applies to all exporters)
+sanitize_payloads = true
+sensitive_fields = ["api_key", "authorization", "password", "secret", "token"]

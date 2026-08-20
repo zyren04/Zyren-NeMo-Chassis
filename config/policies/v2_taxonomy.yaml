@@ -1,0 +1,200 @@
+version: "2.0"
+description: "Nemotron Content Safety V2 Canonical Taxonomy with synonyms for auto-mapping"
+categories:
+  - name: "violence"
+    display_name: "Violence"
+    aegis_label: "S1"
+    default_severity: "S3"
+    synonyms: ["violence", "fighting", "assault", "gore", "graphic injury", "torture", "physical harm"]
+    definition: "Content that depicts, threatens, glorifies, or instructs physical violence against people or animals."
+    out_of_scope: ["legal hunting/sport/collector content", "fictional violence in entertainment context"]
+    non_negotiable: false
+
+  - name: "sexual"
+    display_name: "Sexual"
+    aegis_label: "S2"
+    default_severity: "S2"
+    synonyms: ["sexual content", "nsfw", "explicit", "erotica", "porn", "adult content"]
+    definition: "Sexually explicit content involving adults."
+    out_of_scope: ["educational sexual health content", "medical anatomy"]
+    non_negotiable: false
+
+  - name: "criminal_planning"
+    display_name: "Criminal Planning/Confessions"
+    aegis_label: "S3"
+    default_severity: "S3"
+    synonyms: ["crime", "criminal planning", "fraud planning", "trafficking", "money laundering"]
+    definition: "Step-by-step operational guidance for committing crimes or confessions of past crimes."
+    out_of_scope: ["information about crime (journalism, academic)"]
+    non_negotiable: false
+
+  - name: "weapons"
+    display_name: "Guns and Illegal Weapons"
+    aegis_label: "S4"
+    default_severity: "S3"
+    synonyms: ["weapons", "guns", "firearms", "ghost guns", "3d printed", "ammunition", "explosives", "bioweapons", "chemical weapons"]
+    definition: "Instructions for acquiring, modifying, or using weapons in ways that bypass legal controls, including untraceable firearms and conversions."
+    out_of_scope: ["legal hunting/sport/collector content"]
+    non_negotiable: false
+
+  - name: "controlled_substances"
+    display_name: "Controlled/Regulated Substances"
+    aegis_label: "S5"
+    default_severity: "S3"
+    synonyms: ["drugs", "narcotics", "controlled substances", "synthesis", "dealing", "trafficking"]
+    definition: "Synthesis, dosage circumvention, illicit-market sourcing, or trafficking guidance for controlled substances."
+    out_of_scope: ["harm reduction content", "medical use with prescription"]
+    non_negotiable: false
+
+  - name: "self_harm"
+    display_name: "Suicide and Self Harm"
+    aegis_label: "S6"
+    default_severity: "S4"
+    synonyms: ["suicide", "self harm", "self injury", "cutting", "eating disorder"]
+    definition: "Encouragement, instructions, or glorification of self-harm or suicide."
+    out_of_scope: ["mental health awareness content", "crisis resource sharing"]
+    non_negotiable: false
+
+  - name: "sexual_minor"
+    display_name: "Sexual (Minor)"
+    aegis_label: "S7"
+    default_severity: "S4"
+    synonyms: ["csam", "child sexual abuse", "minor sexual", "csae"]
+    definition: "Content that sexualizes minors."
+    out_of_scope: ["None - non-negotiable floor category"]
+    non_negotiable: true
+
+  - name: "hate_identity"
+    display_name: "Hate/Identity Hate"
+    aegis_label: "S8"
+    default_severity: "S3"
+    synonyms: ["hate speech", "identity hate", "racism", "sexism", "homophobia", "transphobia", "antisemitism", "islamophobia"]
+    definition: "Content that attacks, demeans, or promotes hatred against protected groups."
+    out_of_scope: ["academic discussion of hate groups", "counter-speech"]
+    non_negotiable: false
+
+  - name: "pii_privacy"
+    display_name: "PII/Privacy"
+    aegis_label: "S9"
+    default_severity: "S2"
+    synonyms: ["pii", "privacy", "personal information", "doxxing", "ssn", "credit card", "address"]
+    definition: "Disclosure or solicitation of personally identifiable information."
+    out_of_scope: ["publicly available information", "fictional examples"]
+    non_negotiable: false
+
+  - name: "harassment"
+    display_name: "Harassment"
+    aegis_label: "S10"
+    default_severity: "S2"
+    synonyms: ["harassment", "bullying", "stalking", "intimidation", "targeted abuse"]
+    definition: "Persistent or severe targeted abuse against an individual."
+    out_of_scope: ["constructive criticism", "disagreement"]
+    non_negotiable: false
+
+  - name: "threat"
+    display_name: "Threat"
+    aegis_label: "S11"
+    default_severity: "S3"
+    synonyms: ["threat", "death threat", "bomb threat", "violent threat"]
+    definition: "Credible threats of physical harm or violence against individuals or groups."
+    out_of_scope: ["hyperbolic language", "fictional threats in storytelling"]
+    non_negotiable: false
+
+  - name: "profanity"
+    display_name: "Profanity"
+    aegis_label: "S12"
+    default_severity: "S1"
+    synonyms: ["profanity", "swearing", "cursing", "obscenity", "vulgar language"]
+    definition: "Offensive or vulgar language."
+    out_of_scope: ["mild colloquialisms", "quoted material"]
+    non_negotiable: false
+
+  - name: "needs_caution"
+    display_name: "Needs Caution"
+    aegis_label: "S13"
+    default_severity: "S2"
+    synonyms: ["caution", "sensitive", "potentially harmful", "borderline"]
+    definition: "Content that may be harmful in certain contexts but is not clearly violating."
+    out_of_scope: ["clearly safe content", "clearly harmful content"]
+    non_negotiable: false
+
+  - name: "manipulation"
+    display_name: "Manipulation"
+    aegis_label: "S14"
+    default_severity: "S2"
+    synonyms: ["manipulation", "social engineering", "psychological manipulation", "gaslighting"]
+    definition: "Content designed to manipulate, deceive, or coerce the user."
+    out_of_scope: ["persuasive writing", "marketing content"]
+    non_negotiable: false
+
+  - name: "fraud_deception"
+    display_name: "Fraud/Deception"
+    aegis_label: "S15"
+    default_severity: "S3"
+    synonyms: ["fraud", "deception", "scam", "phishing", "identity theft", "financial fraud"]
+    definition: "Content that facilitates fraud, scams, or deceptive practices."
+    out_of_scope: ["educational content about fraud prevention"]
+    non_negotiable: false
+
+  - name: "malware"
+    display_name: "Malware"
+    aegis_label: "S16"
+    default_severity: "S4"
+    synonyms: ["malware", "virus", "ransomware", "trojan", "spyware", "exploit code"]
+    definition: "Code or instructions for creating or distributing malicious software."
+    out_of_scope: ["security research with responsible disclosure", "antivirus signatures"]
+    non_negotiable: false
+
+  - name: "high_risk_gov"
+    display_name: "High Risk Gov Decision Making"
+    aegis_label: "S17"
+    default_severity: "S3"
+    synonyms: ["government decision", "parole decision", "election certification", "military targeting", "asylum decision"]
+    definition: "Use of AI for high-stakes government decisions with public-safety, fairness, or geopolitical consequences."
+    out_of_scope: ["background factual information", "policy analysis"]
+    non_negotiable: false
+
+  - name: "political_misinfo"
+    display_name: "Political/Misinformation/Conspiracy"
+    aegis_label: "S18"
+    default_severity: "S3"
+    synonyms: ["election misinfo", "political propaganda", "conspiracy theory", "deepfake politics"]
+    definition: "Generating political propaganda, election misinformation, conspiracy-theory content, or false claims about public figures or events."
+    out_of_scope: ["neutral political-process explanation", "balanced policy analysis"]
+    non_negotiable: false
+
+  - name: "ip_violation"
+    display_name: "Copyright/Trademark/Plagiarism"
+    aegis_label: "S19"
+    default_severity: "S2"
+    synonyms: ["copyright", "trademark", "plagiarism", "ip infringement", "dmca"]
+    definition: "Reproducing copyrighted text/code/images, generating trademark-infringing content, or supporting plagiarism workflows."
+    out_of_scope: ["fair use", "public-domain content", "properly cited summaries"]
+    non_negotiable: false
+
+  - name: "unauthorized_advice"
+    display_name: "Unauthorized Advice"
+    aegis_label: "S20"
+    default_severity: "S2"
+    synonyms: ["medical advice", "legal advice", "financial advice", "diagnose", "prescribe", "should i sue", "should i buy/sell"]
+    definition: "Model-generated specific medical, legal, or financial advice for an individual's situation without authoritative-source citation."
+    out_of_scope: ["general educational content with citations"]
+    non_negotiable: false
+
+  - name: "illegal_activity"
+    display_name: "Illegal Activity"
+    aegis_label: "S21"
+    default_severity: "S3"
+    synonyms: ["illegal activity", "shoplifting", "trespassing", "tax evasion"]
+    definition: "General-purpose guidance for committing illegal activities not specifically covered by other categories."
+    out_of_scope: ["legal information", "civic education"]
+    non_negotiable: false
+
+  - name: "immoral_unethical"
+    display_name: "Immoral/Unethical"
+    aegis_label: "S22"
+    default_severity: "S2"
+    synonyms: ["unethical", "immoral", "cheating", "academic dishonesty", "betrayal"]
+    definition: "Content that is broadly considered immoral or unethical even if not strictly illegal."
+    out_of_scope: ["ethical dilemmas discussion", "philosophical debate"]
+    non_negotiable: false

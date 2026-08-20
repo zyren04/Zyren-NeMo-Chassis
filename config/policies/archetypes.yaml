@@ -1,0 +1,308 @@
+version: '1.0'
+archetypes:
+  consumer_chatbot:
+    name: Consumer Chatbot (General Purpose)
+    description: General-purpose consumer chatbot with balanced safety
+    categories:
+    - violence
+    - sexual
+    - criminal_planning
+    - weapons
+    - controlled_substances
+    - self_harm
+    - sexual_minor
+    - hate_identity
+    - pii_privacy
+    - harassment
+    - threat
+    - profanity
+    - needs_caution
+    severity_overrides:
+      profanity: S1
+    notes: Profanity often relaxed to S1 with no automatic block. PII tightened for
+      outbound.
+  enterprise_rag:
+    name: Enterprise RAG over Internal Docs
+    description: RAG system over proprietary/internal documents
+    categories:
+    - violence
+    - sexual
+    - criminal_planning
+    - weapons
+    - controlled_substances
+    - self_harm
+    - sexual_minor
+    - hate_identity
+    - pii_privacy
+    - harassment
+    - threat
+    - profanity
+    - needs_caution
+    - manipulation
+    - fraud_deception
+    - malware
+    - high_risk_gov
+    - political_misinfo
+    - ip_violation
+    - unauthorized_advice
+    - illegal_activity
+    - immoral_unethical
+    severity_overrides:
+      pii_privacy: S3
+    custom_categories:
+    - name: trade_secret
+      display_name: Trade Secrets
+      definition: Disclosure of proprietary algorithms, formulas, or processes
+      severity: S3
+      custom: true
+    - name: competitive_intel
+      display_name: Competitive Intelligence
+      definition: Leakage of competitor-sensitive information
+      severity: S3
+      custom: true
+    - name: unreleased_product_info
+      display_name: Unreleased Product Information
+      definition: Disclosure of unannounced products or features
+      severity: S3
+      custom: true
+    notes: PII and confidentiality elevated to S3. Add off_topic custom category for
+      domain scoping.
+  kids_education:
+    name: Kids / Education
+    description: Child-facing educational applications
+    categories:
+    - violence
+    - sexual
+    - criminal_planning
+    - weapons
+    - controlled_substances
+    - self_harm
+    - sexual_minor
+    - hate_identity
+    - pii_privacy
+    - harassment
+    - threat
+    - profanity
+    - needs_caution
+    severity_overrides:
+      sexual: S3
+      sexual_minor: S4
+      profanity: S3
+    custom_categories:
+    - name: age_inappropriate
+      display_name: Age Inappropriate
+      definition: Gambling, alcohol, tobacco, or adult-themed references unsuitable
+        for minors
+      severity: S3
+      custom: true
+    notes: Self-harm must redirect to youth-specific resources (Crisis Text Line HOME
+      to 741741). Allow-list scientific anatomy at age-appropriate level.
+  healthcare:
+    name: Healthcare / Clinical
+    description: Clinical decision support and patient-facing healthcare
+    categories:
+    - violence
+    - sexual
+    - criminal_planning
+    - weapons
+    - controlled_substances
+    - self_harm
+    - sexual_minor
+    - hate_identity
+    - pii_privacy
+    - harassment
+    - threat
+    - profanity
+    - needs_caution
+    - manipulation
+    - fraud_deception
+    - high_risk_gov
+    - unauthorized_advice
+    - illegal_activity
+    - immoral_unethical
+    severity_overrides:
+      pii_privacy: S3
+      controlled_substances: S2
+    custom_categories:
+    - name: medical_advice_unauthorized
+      display_name: Unauthorized Medical Advice
+      definition: Specific medical diagnosis or treatment recommendation without authoritative
+        citation
+      severity: S3
+      custom: true
+    - name: diagnosis_claim
+      display_name: Diagnosis Claim
+      definition: Model presenting output as a medical diagnosis
+      severity: S3
+      custom: true
+    - name: medication_dosage
+      display_name: Medication Dosage
+      definition: Specific dosage recommendations for individuals
+      severity: S3
+      custom: true
+    notes: Self-harm needs clinician-grade response. PII becomes PHI (stricter superset).
+  financial_services:
+    name: Financial Services
+    description: Banking, investment, and financial advisory
+    categories:
+    - violence
+    - sexual
+    - criminal_planning
+    - weapons
+    - controlled_substances
+    - self_harm
+    - sexual_minor
+    - hate_identity
+    - pii_privacy
+    - harassment
+    - threat
+    - profanity
+    - needs_caution
+    - manipulation
+    - fraud_deception
+    - high_risk_gov
+    - political_misinfo
+    - ip_violation
+    - unauthorized_advice
+    - illegal_activity
+    - immoral_unethical
+    custom_categories:
+    - name: investment_recommendation
+      display_name: Investment Recommendation
+      definition: Specific buy/sell/hold recommendations for securities
+      severity: S3
+      custom: true
+    - name: regulated_advice
+      display_name: Regulated Financial Advice
+      definition: Advice requiring licensed advisor (tax, retirement, estate)
+      severity: S3
+      custom: true
+    - name: market_manipulation
+      display_name: Market Manipulation
+      definition: Content intended to manipulate security prices
+      severity: S4
+      custom: true
+    - name: insider_info
+      display_name: Insider Information
+      definition: Material non-public information about securities
+      severity: S4
+      custom: true
+    notes: Often paired with mandatory disclosure phrasing in response guidance.
+  code_assistant:
+    name: Code Assistant / Developer Tools
+    description: Programming assistance and code generation
+    categories:
+    - violence
+    - sexual
+    - criminal_planning
+    - weapons
+    - controlled_substances
+    - self_harm
+    - sexual_minor
+    - hate_identity
+    - pii_privacy
+    - harassment
+    - threat
+    - profanity
+    - needs_caution
+    - manipulation
+    - fraud_deception
+    - malware
+    - ip_violation
+    - illegal_activity
+    - immoral_unethical
+    custom_categories:
+    - name: malware
+      display_name: Malware
+      definition: Code designed to harm, exploit, or gain unauthorized access
+      severity: S4
+      custom: true
+    - name: vulnerability_exploit
+      display_name: Vulnerability Exploit
+      definition: Functional exploit code for known vulnerabilities
+      severity: S4
+      custom: true
+    - name: unauthorized_access_code
+      display_name: Unauthorized Access Code
+      definition: Code facilitating unauthorized system access
+      severity: S3
+      custom: true
+    - name: license_violation
+      display_name: License Violation
+      definition: Code generated from copyrighted sources without compliance
+      severity: S2
+      custom: true
+    notes: 'PII: model should not invent personal data in code examples.'
+  government_sovereign:
+    name: Government / Sovereign Deployment
+    description: Public sector with jurisdictional compliance requirements
+    categories:
+    - violence
+    - sexual
+    - criminal_planning
+    - weapons
+    - controlled_substances
+    - self_harm
+    - sexual_minor
+    - hate_identity
+    - pii_privacy
+    - harassment
+    - threat
+    - profanity
+    - needs_caution
+    - manipulation
+    - fraud_deception
+    - high_risk_gov
+    - political_misinfo
+    - ip_violation
+    - unauthorized_advice
+    - illegal_activity
+    - immoral_unethical
+    custom_categories:
+    - name: disinformation
+      display_name: Disinformation
+      definition: Coordinated false narratives targeting public discourse
+      severity: S3
+      custom: true
+    - name: election_interference
+      display_name: Election Interference
+      definition: Content designed to disrupt electoral processes
+      severity: S4
+      custom: true
+    - name: national_security_sensitive
+      display_name: National Security Sensitive
+      definition: Classified or sensitive national security information
+      severity: S4
+      custom: true
+    notes: Jurisdiction notes critical (EU AI Act, India IT Rules, etc.). Hate_identity
+      expanded for local protected classes (caste in India). Severity model usually
+      graded with explicit human-review tier.
+  synthetic_labeling:
+    name: Synthetic Data / Labeling Rubric
+    description: Training data generation and human labeling rubrics
+    categories:
+    - violence
+    - sexual
+    - criminal_planning
+    - weapons
+    - controlled_substances
+    - self_harm
+    - sexual_minor
+    - hate_identity
+    - pii_privacy
+    - harassment
+    - threat
+    - profanity
+    - needs_caution
+    - manipulation
+    - fraud_deception
+    - malware
+    - high_risk_gov
+    - political_misinfo
+    - ip_violation
+    - unauthorized_advice
+    - illegal_activity
+    - immoral_unethical
+    notes: All categories present with very tight examples_safe/examples_unsafe. Edge_cases
+      field is most important. Severity model usually binary (for label generation,
+      not runtime gating).

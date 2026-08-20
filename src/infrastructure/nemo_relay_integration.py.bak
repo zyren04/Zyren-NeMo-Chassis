@@ -1,0 +1,311 @@
+"""
+NeMo Relay Integration Module
+Centralizes scope management, middleware registration, and observability configuration.
+
+This module provides a unified interface for integrating NeMo Relay's managed execution
+APIs (scopes, tool/LLM lifecycle, guardrails, intercepts) into the infrastructure chassis.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import contextvars
+import logging
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from typing import Any, AsyncIterator, Callable, Optional
+
+# NeMo Relay imports with graceful fallback
+try:
+    import nemo_relay
+    from nemo_relay import ScopeType, ScopeHandle, LLMRequest, ToolExecutionResult
+    from nemo_relay.codecs import BestEffortAnyCodec, OpenAIChatCodec
+    from nemo_relay.integrations.langgraph import NemoRelayCallbackHandler
+    from nemo_relay.integrations.langchain import NemoRelayMiddleware
+    NEMO_RELAY_AVAILABLE = True
+except ImportError:
+    nemo_relay = None  # type: ignore
+    ScopeType = None  # type: ignore
+    ScopeHandle = None  # type: ignore
+    LLMRequest = None  # type: ignore
+    ToolExecutionResult = None  # type: ignore
+    BestEffortAnyCodec = None  # type: ignore
+    OpenAIChatCodec = None  # type: ignore
+    NemoRelayCallbackHandler = None  # type: ignore
+    NemoRelayMiddleware = None  # type: ignore
+    NEMO_RELAY_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
+
+# Context variable for current workflow scope handle
+_current_workflow_scope: contextvars.ContextVar[Optional[Any]] = contextvars.ContextVar(
+    "current_workflow_scope", default=None
+)
+
+# NeMo Relay scope stack isolation primitives
+_scope_stack_var: contextvars.ContextVar[Optional[Any]] = contextvars.ContextVar(
+    "nemo_relay_scope_stack", default=None
+)
+_propagation_parent_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "nemo_relay_propagation_parent", default=None
+)
+_propagation_root_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "nemo_relay_propagation_root", default=None
+)
+
+
+@dataclass
+class NeMoRelayConfig:
+    """Configuration for NeMo Relay integration."""
+    enabled: bool = True
+    scope_name_prefix: str = "workflow"
+    register_langgraph_callback: bool = True
+    register_langchain_middleware: bool = True
+    default_codec: str = "best_effort"  # "best_effort" | "openai_chat"
+    global_guardrails: dict[str, Any] = field(default_factory=dict)
+    global_intercepts: dict[str, Any] = field(default_factory=dict)
+
+
+class NeMoRelayIntegration:
+    """Singleton manager for NeMo Relay integration."""
+    
+    _instance: Optional["NeMoRelayIntegration"] = None
+    _initialized: bool = False
+    
+    def __new__(cls, config: Optional[NeMoRelayConfig] = None) -> "NeMoRelayIntegration":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def __init__(self, config: Optional[NeMoRelayConfig] = None):
+        if self._initialized:
+            return
+        self.config = config or NeMoRelayConfig()
+        self._callback_handler: Optional[Any] = None
+        self._middleware: Optional[Any] = None
+        self._codec = None
+        self._initialize()
+    
+    def _get_codec(self):
+        if not NEMO_RELAY_AVAILABLE:
+            return None
+        if self.config.default_codec == "openai_chat" and OpenAIChatCodec:
+            return OpenAIChatCodec()
+        if BestEffortAnyCodec:
+            return BestEffortAnyCodec()
+        return None
+    
+    def _initialize(self) -> None:
+        if not self.config.enabled:
+            logger.info("NeMo Relay integration disabled via config")
+            return
+        
+        if not NEMO_RELAY_AVAILABLE:
+            logger.warning("NeMo Relay package not available; integration running in no-op mode")
+            return
+        
+        # Register global guardrails
+        self._register_global_guardrails()
+        
+        # Register global intercepts
+        self._register_global_intercepts()
+        
+        # Initialize LangGraph callback handler
+        if self.config.register_langgraph_callback and NemoRelayCallbackHandler:
+            self._callback_handler = NemoRelayCallbackHandler()
+            logger.info("NeMo Relay LangGraph callback handler registered")
+        
+        # Initialize LangChain middleware
+        if self.config.register_langchain_middleware and NemoRelayMiddleware:
+            self._middleware = NemoRelayMiddleware()
+            logger.info("NeMo Relay LangChain middleware registered")
+        
+        self._codec = self._get_codec()
+        self._initialized = True
+        logger.info("NeMo Relay integration initialized successfully")
+    
+    def _register_global_guardrails(self) -> None:
+        """Register application-wide guardrails."""
+        if not NEMO_RELAY_AVAILABLE:
+            return
+        
+        # Conditional execution: global token budget
+        try:
+            nemo_relay.guardrails.register_llm_conditional_execution(
+                "global-token-budget", 10,
+                lambda request: None  # Implement budget check
+            )
+        except Exception as e:
+            logger.debug(f"Could not register global-token-budget guardrail: {e}")
+        
+        # Sanitize: PII redaction on events
+        try:
+            nemo_relay.guardrails.register_llm_sanitize_request(
+                "global-pii-request", 20,
+                lambda request, context: self._sanitize_request(request)
+            )
+            nemo_relay.guardrails.register_llm_sanitize_response(
+                "global-pii-response", 20,
+                lambda response, context: self._sanitize_response(response)
+            )
+        except Exception as e:
+            logger.debug(f"Could not register PII sanitize guardrails: {e}")
+    
+    def _register_global_intercepts(self) -> None:
+        """Register application-wide middleware intercepts."""
+        if not NEMO_RELAY_AVAILABLE:
+            return
+        
+        # Request intercept: add correlation ID
+        try:
+            nemo_relay.intercepts.register_llm_request(
+                "correlation-id", 10, False,
+                lambda name, request, annotated: nemo_relay.LLMRequestInterceptOutcome(  # type: ignore
+                    nemo_relay.LLMRequest(  # type: ignore
+                        headers={**request.headers, "X-Correlation-ID": self._get_correlation_id()},
+                        content=request.content
+                    ),
+                    annotated
+                )
+            )
+        except Exception as e:
+            logger.debug(f"Could not register correlation-id intercept: {e}")
+        
+        # Execution intercept: metrics collection
+        try:
+            nemo_relay.intercepts.register_llm_execution(
+                "metrics", 10,
+                lambda name, request, next_call: self._collect_metrics(name, request, next_call)
+            )
+        except Exception as e:
+            logger.debug(f"Could not register metrics intercept: {e}")
+    
+    def _sanitize_request(self, request: Any) -> Any:
+        """Sanitize request for event emission (PII redaction)."""
+        # Implementation would redact sensitive fields
+        return request
+    
+    def _sanitize_response(self, response: dict) -> dict:
+        """Sanitize response for event emission."""
+        return response
+    
+    def _get_correlation_id(self) -> str:
+        import uuid
+        return str(uuid.uuid4())
+    
+    async def _collect_metrics(self, name: str, request: Any, next_call: Callable):
+        import time
+        start = time.perf_counter()
+        result = await next_call(request)
+        latency_ms = (time.perf_counter() - start) * 1000
+        # Emit to event store / metrics
+        logger.debug(f"NeMo Relay: {name} latency: {latency_ms:.2f}ms")
+        return result
+    
+    # Scope management helpers
+    def create_workflow_scope(self, execution_id: str, entry_point: str) -> Any:
+        """Create a root scope for a workflow execution."""
+        if not NEMO_RELAY_AVAILABLE or not nemo_relay:
+            return None
+        return nemo_relay.scope.push(
+            name=f"{self.config.scope_name_prefix}-{execution_id[:8]}",
+            scope_type=ScopeType.Agent,
+            data={"execution_id": execution_id, "entry_point": entry_point},
+            metadata={"source": "workflow_engine"}
+        )
+    
+    def close_workflow_scope(self, handle: Any, output: dict | None = None) -> None:
+        """Close a workflow scope."""
+        if not NEMO_RELAY_AVAILABLE or not nemo_relay or not handle:
+            return
+        nemo_relay.scope.pop(handle, output=output)
+    
+    def workflow_scope(self, execution_id: str, entry_point: str):
+        """Context manager for workflow scope."""
+        handle = self.create_workflow_scope(execution_id, entry_point)
+        token = _current_workflow_scope.set(handle)
+        try:
+            yield handle
+        finally:
+            self.close_workflow_scope(handle)
+            _current_workflow_scope.reset(token)
+    
+    def get_current_scope(self) -> Any:
+        """Get current workflow scope handle."""
+        return _current_workflow_scope.get()
+    
+    # Managed execution helpers
+    async def execute_tool(
+        self,
+        name: str,
+        args: dict,
+        func: Callable,
+        handle: Optional[Any] = None,
+        **kwargs
+    ) -> Any:
+        """Execute a tool through NeMo Relay managed pipeline."""
+        if not NEMO_RELAY_AVAILABLE or not nemo_relay:
+            # Fallback: execute directly
+            result = await func(args)
+            return ToolExecutionResult(result) if ToolExecutionResult else result
+        
+        return await nemo_relay.tools.execute(
+            name=name,
+            args=args,
+            func=func,
+            handle=handle or self.get_current_scope(),
+            codec=self._codec,
+            result_codec=self._codec,
+            **kwargs
+        )
+    
+    async def execute_llm(
+        self,
+        name: str,
+        request: Any,
+        func: Callable,
+        handle: Optional[Any] = None,
+        model_name: Optional[str] = None,
+        **kwargs
+    ) -> dict:
+        """Execute an LLM call through NeMo Relay managed pipeline."""
+        if not NEMO_RELAY_AVAILABLE or not nemo_relay:
+            # Fallback: execute directly
+            return await func(request)
+        
+        return await nemo_relay.llm.execute(
+            name=name,
+            request=request,
+            func=func,
+            handle=handle or self.get_current_scope(),
+            model_name=model_name,
+            codec=self._codec,
+            response_codec=self._codec,
+            **kwargs
+        )
+    
+    def get_callback_handler(self) -> Optional[Any]:
+        return self._callback_handler
+    
+    def get_middleware(self) -> Optional[Any]:
+        return self._middleware
+
+
+# Global instance getter
+def get_nemo_relay_integration(config: Optional[NeMoRelayConfig] = None) -> NeMoRelayIntegration:
+    return NeMoRelayIntegration(config)
+
+
+def set_nemo_relay_integration(integration: NeMoRelayIntegration) -> None:
+    NeMoRelayIntegration._instance = integration
+    NeMoRelayIntegration._initialized = False
+    integration._initialize()
+
+
+__all__ = [
+    "NeMoRelayConfig",
+    "NeMoRelayIntegration",
+    "get_nemo_relay_integration",
+    "set_nemo_relay_integration",
+    "NEMO_RELAY_AVAILABLE",
+]
