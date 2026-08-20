@@ -1,28 +1,28 @@
 version: "1.0"
 models:
   - name: default
-    model: "nvidia/nemotron-3-8b"
-    max_rpm: 100
+    model: "nvidia/nemotron-3.5-lightning-30b-a3b"
+    max_rpm: 40
     rate_limit_mode: "token_bucket"
     tags: ["general", "default"]
     enabled: true
   
   - name: reasoning
     model: "nvidia/nemotron-3-ultra-550b-a55b"
-    max_rpm: 30
+    max_rpm: 40
     rate_limit_mode: "strict"
     tags: ["reasoning", "premium", "complex"]
     enabled: true
   
   - name: fast
-    model: "nvidia/nemotron-3-8b"
-    max_rpm: 200
+    model: "nvidia/nemotron-3.5-lightning-30b-a3b"
+    max_rpm: 40
     rate_limit_mode: "token_bucket"
     tags: ["fast", "high-throughput", "simple"]
     enabled: true
   
   - name: coding
-    model: "nvidia/code-llama-70b-instruct"
+    model: "nvidia/nemotron-3.5-lightning-30b-a3b"
     max_rpm: 40
     rate_limit_mode: "token_bucket"
     tags: ["coding", "specialized", "programming"]
@@ -30,7 +30,7 @@ models:
   
   - name: disabled-example
     model: "nvidia/some-deprecated-model"
-    max_rpm: 60
+    max_rpm: 40
     rate_limit_mode: "token_bucket"
     tags: ["deprecated"]
     enabled: false
