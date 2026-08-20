@@ -13,10 +13,10 @@ layout:
       storage: git
     - path: models/
       type: models
-      storage: gitlfs
+      storage: git
     - path: data/
       type: data
-      storage: gitlfs
+      storage: git
     - path: data/scratch/
       type: data
       storage: gitignore
