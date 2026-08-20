@@ -10,10 +10,10 @@ meta:
 layout:
     - path: code/
       type: code
-      storage: git
+      storage: gitlfs
     - path: models/
       type: models
-      storage: git
+      storage: gitlfs
     - path: data/
       type: data
       storage: git
